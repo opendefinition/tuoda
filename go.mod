@@ -1,3 +1,3 @@
-module github.com/rjohnsen/tuoda
+module github.com/opendefinition/tuoda
 
 go 1.18
