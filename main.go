@@ -25,15 +25,14 @@ func (pc *ParseCmd) Run(ctx *Context) error {
 var cli struct {
 	Debug bool `help:"Enable debug mode"`
 
-	Pc ParseCmd `cmd: help:"Parse log"`
+	Parse ParseCmd `cmd: help:"Parse log"`
 }
 
 func main() {
 	fmt.Println("Tuoda Log Importer - v.0.0.1")
-	fmt.Println("By Roger Johnsen - Opendefinition 2022")
+	fmt.Println("By Roger Johnsen - Opendefinition 2022\n")
 
 	ctx := kong.Parse(&cli)
 	err := ctx.Run(&Context{Debug: cli.Debug})
 	ctx.FatalIfErrorf(err)
-
 }
