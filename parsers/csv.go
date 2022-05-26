@@ -38,9 +38,12 @@ func (cd *CsvDefinition) Parse(logPath string) {
 	for logScanner.Scan() {
 		// Extract column names
 		if counter == int(cd.ColumnsHeaders.LinePos) {
-			cd.ParseHeaderColumns(logScanner.Text())
+			if len(cd.ColumnsHeaders.Names) == 0 {
+				cd.ParseHeaderColumns(logScanner.Text())
+			}
 		}
 
+		// Parse logline
 		if counter >= (cd.Data.StartsAtLine) {
 			logentry := cd.ParseLogLine(logScanner.Text())
 			fmt.Println(logentry)
@@ -53,22 +56,31 @@ func (cd *CsvDefinition) Parse(logPath string) {
 }
 
 func (cd *CsvDefinition) ParseHeaderColumns(line string) {
-
 	// Remove unwanted characters
 	line = strings.ReplaceAll(line, ".", "_")
 
 	// Removing unwanted columns
-	cd.ColumnsHeaders = strings.Split(line, cd.Delimiter)
+	for index, name := range strings.Split(line, cd.Delimiter) {
+		illegal := false
+		for _, skip := range cd.ColumnsHeaders.SkipCols {
+			if (index + 1) == skip {
+				illegal = true
+			}
+		}
 
-	for _, index := range cd.ColumnsHeaders.SkipCols {
-		index -= 1
-		cd.ColumnsHeaders = append(cd.ColumnsHeaders[:index], cd.ColumnsHeaders[index+1:]...)
+		if illegal == false {
+			cd.ColumnsHeaders.Names = append(cd.ColumnsHeaders.Names, name)
+		}
 	}
 }
 
-func (cd *CsvDefinition) ParseLogLine(logline string) []string {
-	line := strings.Split(logline, cd.Delimiter)
-	fmt.Println(line)
+func (cd *CsvDefinition) ParseLogLine(logline string) map[string]interface{} {
+	data := strings.Split(logline, cd.Delimiter)
+	logentry := make(map[string]interface{})
 
-	return line
+	for index, value := range data {
+		logentry[cd.ColumnsHeaders.Names[index]] = value
+	}
+
+	return logentry
 }

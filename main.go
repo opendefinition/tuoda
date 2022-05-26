@@ -22,9 +22,6 @@ type ParseCmd struct {
 }
 
 func (pc *ParseCmd) Run(ctx *Context) error {
-	fmt.Println(pc.Parser)
-	fmt.Println(pc.LogFile)
-
 	parserdefRaw := ReadParserDefinition(pc.Parser)
 
 	// Finding parser type
