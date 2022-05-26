@@ -1,10 +1,11 @@
 package parsers
 
-import "fmt"
-
-type Test struct {
-	Jalla string
-}
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+)
 
 type ColumnHeaders struct {
 	LinePos  uint     `json:"line_pos"`
@@ -23,6 +24,51 @@ type CsvDefinition struct {
 	Data           DataRow       `json:"data"`
 }
 
-func (cd *CsvDefinition) Parse() {
-	fmt.Println("Parsing CSV")
+func (cd *CsvDefinition) Parse(logPath string) {
+	logFile, err := os.Open(logPath)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	logScanner := bufio.NewScanner(logFile)
+
+	counter := 1
+
+	for logScanner.Scan() {
+		// Extract column names
+		if counter == int(cd.ColumnsHeaders.LinePos) {
+			cd.ParseHeaderColumns(logScanner.Text())
+		}
+
+		if counter >= (cd.Data.StartsAtLine) {
+			logentry := cd.ParseLogLine(logScanner.Text())
+			fmt.Println(logentry)
+		}
+
+		counter++
+	}
+
+	logFile.Close()
+}
+
+func (cd *CsvDefinition) ParseHeaderColumns(line string) {
+
+	// Remove unwanted characters
+	line = strings.ReplaceAll(line, ".", "_")
+
+	// Removing unwanted columns
+	cd.ColumnsHeaders = strings.Split(line, cd.Delimiter)
+
+	for _, index := range cd.ColumnsHeaders.SkipCols {
+		index -= 1
+		cd.ColumnsHeaders = append(cd.ColumnsHeaders[:index], cd.ColumnsHeaders[index+1:]...)
+	}
+}
+
+func (cd *CsvDefinition) ParseLogLine(logline string) []string {
+	line := strings.Split(logline, cd.Delimiter)
+	fmt.Println(line)
+
+	return line
 }

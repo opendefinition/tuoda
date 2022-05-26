@@ -25,13 +25,7 @@ func (pc *ParseCmd) Run(ctx *Context) error {
 	fmt.Println(pc.Parser)
 	fmt.Println(pc.LogFile)
 
-	test := new(parsers.CsvDefinition)
-	doc, _ := json.Marshal(test)
-	fmt.Println(string(doc))
-
-	fmt.Println("Testings")
 	parserdefRaw := ReadParserDefinition(pc.Parser)
-	fmt.Println(parserdefRaw)
 
 	// Finding parser type
 	regx := regexp.MustCompile("\"parser_type\":\\s\"(\\w+)\"")
@@ -40,11 +34,14 @@ func (pc *ParseCmd) Run(ctx *Context) error {
 	if len(match) == 0 {
 		fmt.Println("No match for parser, sorry")
 	} else {
-		// Pretend there's a switch here
-		obj := new(parsers.CsvDefinition)
-		json.Unmarshal([]byte(parserdefRaw), obj)
-
-		obj.Parse()
+		switch match[1] {
+		case "csv":
+			obj := new(parsers.CsvDefinition)
+			json.Unmarshal([]byte(parserdefRaw), obj)
+			obj.Parse(pc.LogFile)
+		default:
+			fmt.Println("No such parser exists. Check your settings.")
+		}
 	}
 
 	return nil
