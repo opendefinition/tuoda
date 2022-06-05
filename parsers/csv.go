@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/opendefinition/tuoda/database"
 )
 
 type ColumnHeaders struct {
@@ -35,6 +37,25 @@ func (cd *CsvDefinition) Parse(logPath string) {
 
 	counter := 1
 
+	// Prepare Arrango database
+	var database_name, database_username, database_password string
+
+	fmt.Print("Database name: ")
+	fmt.Scanln(&database_name)
+
+	fmt.Print("Database user: ")
+	fmt.Scanln(&database_username)
+
+	fmt.Print("Database password: ")
+	fmt.Scanln(&database_password)
+
+	arrango := database.ArrangoDBClient(
+		"http://localhost:8529",
+		database_name,
+		database_username,
+		database_password,
+	)
+
 	for logScanner.Scan() {
 		// Extract column names
 		if counter == int(cd.ColumnsHeaders.LinePos) {
@@ -46,7 +67,9 @@ func (cd *CsvDefinition) Parse(logPath string) {
 		// Parse logline
 		if counter >= (cd.Data.StartsAtLine) {
 			logentry := cd.ParseLogLine(logScanner.Text())
-			fmt.Println(logentry)
+
+			// Put logline into storage
+			arrango.InsertLogItem("logs", logentry)
 		}
 
 		counter++
