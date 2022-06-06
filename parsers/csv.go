@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/opendefinition/tuoda/config"
 	"github.com/opendefinition/tuoda/database"
 )
 
@@ -26,7 +27,7 @@ type CsvDefinition struct {
 	Data           DataRow       `json:"data"`
 }
 
-func (cd *CsvDefinition) Parse(logPath string) {
+func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
 	logFile, err := os.Open(logPath)
 
 	if err != nil {
@@ -37,26 +38,19 @@ func (cd *CsvDefinition) Parse(logPath string) {
 
 	counter := 1
 	element_counter := 0
+
 	// Prepare Arango database
-	var database_name, database_username, database_password string
-
-	fmt.Print("Database name: ")
-	fmt.Scanln(&database_name)
-
-	fmt.Print("Database user: ")
-	fmt.Scanln(&database_username)
-
-	fmt.Print("Database password: ")
-	fmt.Scanln(&database_password)
-
-	fmt.Println("")
-
 	Arango := database.ArangoDBClient(
-		"http://localhost:8529",
-		database_name,
-		database_username,
-		database_password,
+		config.ArangoDB.Address,
+		config.ArangoDB.Database,
+		config.ArangoDB.Username,
+		config.ArangoDB.Password,
 	)
+
+	// Ask where to store the log
+	var collection_name string
+	fmt.Print("Name of collection: ")
+	fmt.Scanln(&collection_name)
 
 	for logScanner.Scan() {
 		// Extract column names
@@ -72,7 +66,7 @@ func (cd *CsvDefinition) Parse(logPath string) {
 
 			// Put logline into storage
 			fmt.Print(".")
-			Arango.InsertLogItem("logs", logentry)
+			Arango.InsertLogItem(collection_name, logentry)
 			element_counter++
 		}
 

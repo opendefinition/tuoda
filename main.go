@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/alecthomas/kong"
+	"github.com/opendefinition/tuoda/config"
 	"github.com/opendefinition/tuoda/parsers"
 )
 
@@ -28,6 +29,9 @@ func (pc *ParseCmd) Run(ctx *Context) error {
 	regx := regexp.MustCompile("\"parser_type\":\\s\"(\\w+)\"")
 	match := regx.FindStringSubmatch(parserdefRaw)
 
+	// Load configuration
+	config := config.LoadConfiguration()
+
 	if len(match) == 0 {
 		fmt.Println("No match for parser, sorry")
 	} else {
@@ -35,7 +39,7 @@ func (pc *ParseCmd) Run(ctx *Context) error {
 		case "csv":
 			obj := new(parsers.CsvDefinition)
 			json.Unmarshal([]byte(parserdefRaw), obj)
-			obj.Parse(pc.LogFile)
+			obj.Parse(config, pc.LogFile)
 		default:
 			fmt.Println("No such parser exists. Check your settings.")
 		}
