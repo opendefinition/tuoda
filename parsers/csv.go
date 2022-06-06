@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"crypto/sha256"
+
 	"github.com/opendefinition/tuoda/config"
 	"github.com/opendefinition/tuoda/database"
 )
@@ -51,6 +53,7 @@ func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
 	var collection_name string
 	fmt.Print("Name of collection: ")
 	fmt.Scanln(&collection_name)
+	fmt.Println("")
 
 	for logScanner.Scan() {
 		// Extract column names
@@ -64,6 +67,11 @@ func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
 		if counter >= (cd.Data.StartsAtLine) {
 			logentry := cd.ParseLogLine(logScanner.Text())
 
+			// Generate document id for log entry
+			sha256id := sha256.New()
+			sha256id.Write([]byte(fmt.Sprintf("%v", logentry)))
+			logentry["_key"] = fmt.Sprintf("%x", sha256id.Sum(nil))
+
 			// Put logline into storage
 			fmt.Print(".")
 			Arango.InsertLogItem(collection_name, logentry)
@@ -74,7 +82,7 @@ func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
 	}
 
 	logFile.Close()
-	fmt.Println("\nElements inserted: ", element_counter)
+	fmt.Println("\n\nElements inserted: ", element_counter)
 }
 
 func (cd *CsvDefinition) ParseHeaderColumns(line string) {
