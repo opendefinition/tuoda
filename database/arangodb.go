@@ -8,17 +8,17 @@ import (
 	"github.com/arangodb/go-driver/http"
 )
 
-type ArrangoDB struct {
+type ArangoDB struct {
 	Connection driver.Connection
 	Client     driver.Client
 	Database   driver.Database
 }
 
-func ArrangoDBClient(address string, database string, username string, password string) *ArrangoDB {
-	arrango := new(ArrangoDB)
+func ArangoDBClient(address string, database string, username string, password string) *ArangoDB {
+	Arango := new(ArangoDB)
 	var err error
 
-	arrango.Connection, err = http.NewConnection(http.ConnectionConfig{
+	Arango.Connection, err = http.NewConnection(http.ConnectionConfig{
 		Endpoints: []string{address},
 	})
 
@@ -26,34 +26,34 @@ func ArrangoDBClient(address string, database string, username string, password 
 		log.Fatalf("Failed to create HTTP connection: %v", err)
 	}
 
-	arrango.Client, err = driver.NewClient(driver.ClientConfig{
-		Connection: arrango.Connection,
+	Arango.Client, err = driver.NewClient(driver.ClientConfig{
+		Connection: Arango.Connection,
 		Authentication: driver.BasicAuthentication(
 			username,
 			password,
 		),
 	})
 
-	db_exists, err := arrango.Client.DatabaseExists(nil, database)
+	db_exists, err := Arango.Client.DatabaseExists(nil, database)
 
 	if db_exists {
-		arrango.Database, err = arrango.Client.Database(nil, database)
+		Arango.Database, err = Arango.Client.Database(nil, database)
 
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}
 	} else {
-		arrango.Database, err = arrango.Client.CreateDatabase(nil, database, nil)
+		Arango.Database, err = Arango.Client.CreateDatabase(nil, database, nil)
 
 		if err != nil {
 			log.Fatalf("Failed to create database: %v", err)
 		}
 	}
 
-	return arrango
+	return Arango
 }
 
-func (ac *ArrangoDB) InsertLogItem(collection string, item map[string]interface{}) {
+func (ac *ArangoDB) InsertLogItem(collection string, item map[string]interface{}) {
 	_, err := ac.Database.CollectionExists(nil, collection)
 
 	if err != nil {

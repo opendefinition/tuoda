@@ -36,8 +36,8 @@ func (cd *CsvDefinition) Parse(logPath string) {
 	logScanner := bufio.NewScanner(logFile)
 
 	counter := 1
-
-	// Prepare Arrango database
+	element_counter := 0
+	// Prepare Arango database
 	var database_name, database_username, database_password string
 
 	fmt.Print("Database name: ")
@@ -49,7 +49,9 @@ func (cd *CsvDefinition) Parse(logPath string) {
 	fmt.Print("Database password: ")
 	fmt.Scanln(&database_password)
 
-	arrango := database.ArrangoDBClient(
+	fmt.Println("")
+
+	Arango := database.ArangoDBClient(
 		"http://localhost:8529",
 		database_name,
 		database_username,
@@ -69,13 +71,16 @@ func (cd *CsvDefinition) Parse(logPath string) {
 			logentry := cd.ParseLogLine(logScanner.Text())
 
 			// Put logline into storage
-			arrango.InsertLogItem("logs", logentry)
+			fmt.Print(".")
+			Arango.InsertLogItem("logs", logentry)
+			element_counter++
 		}
 
 		counter++
 	}
 
 	logFile.Close()
+	fmt.Println("\nElements inserted: ", element_counter)
 }
 
 func (cd *CsvDefinition) ParseHeaderColumns(line string) {
