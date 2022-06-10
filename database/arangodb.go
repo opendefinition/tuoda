@@ -42,12 +42,6 @@ func ArangoDBClient(address string, database string, username string, password s
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}
-	} else {
-		Arango.Database, err = Arango.Client.CreateDatabase(nil, database, nil)
-
-		if err != nil {
-			log.Fatalf("Failed to create database: %v", err)
-		}
 	}
 
 	return Arango
