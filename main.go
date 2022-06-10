@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -30,7 +31,11 @@ func (pc *ParseCmd) Run(ctx *Context) error {
 	match := regx.FindStringSubmatch(parserdefRaw)
 
 	// Load configuration
-	config := config.LoadConfiguration()
+	config, err := config.LoadConfiguration()
+
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
 
 	if len(match) == 0 {
 		fmt.Println("No match for parser, sorry")
