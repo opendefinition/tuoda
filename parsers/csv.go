@@ -1,19 +1,20 @@
 package parsers
 
 import (
-	"bufio"
+	"crypto/sha256"
+	"encoding/csv"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"strings"
-
-	"crypto/sha256"
 
 	"github.com/opendefinition/tuoda/config"
 	"github.com/opendefinition/tuoda/database"
 )
 
 type ColumnHeaders struct {
-	LinePos  uint     `json:"line_pos"`
+	LinePos  int      `json:"line_pos"`
 	Names    []string `json:"column_names"`
 	SkipCols []int    `json:"skip_cols`
 }
@@ -30,16 +31,19 @@ type CsvDefinition struct {
 }
 
 func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
-	logFile, err := os.Open(logPath)
+	logfile, err := os.Open(logPath)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 
-	logScanner := bufio.NewScanner(logFile)
+	defer logfile.Close()
 
-	counter := 1
-	element_counter := 0
+	csvreader := csv.NewReader(logfile)
+
+	if cd.Delimiter == "\t" {
+		csvreader.Comma = '\t'
+	}
 
 	// Prepare Arango database
 	Arango := database.ArangoDBClient(
@@ -55,43 +59,46 @@ func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
 	fmt.Scanln(&collection_name)
 	fmt.Println("")
 
-	for logScanner.Scan() {
-		// Extract column names
-		if counter == int(cd.ColumnsHeaders.LinePos) {
-			if len(cd.ColumnsHeaders.Names) == 0 {
-				cd.ParseHeaderColumns(logScanner.Text())
-			}
+	line_counter := 1
+
+	for {
+		line, err := csvreader.Read()
+
+		if err == io.EOF {
+			continue
 		}
 
-		// Parse logline
-		if counter >= (cd.Data.StartsAtLine) {
-			logentry := cd.ParseLogLine(logScanner.Text())
+		if err != nil {
+			log.Fatal(err)
+		}
 
-			// Generate document id for log entry
-			sha256id := sha256.New()
-			sha256id.Write([]byte(fmt.Sprintf("%v", logentry)))
-			logentry["_key"] = fmt.Sprintf("%x", sha256id.Sum(nil))
+		if err != nil {
+			log.Fatal(err)
+		}
 
-			// Put logline into storage
-			fmt.Print(".")
+		fmt.Println(line_counter)
+		// Obtain CSV headers from indicated line
+		if cd.ColumnsHeaders.LinePos >= 0 && line_counter == cd.ColumnsHeaders.LinePos {
+			cd.ParseHeaderColumns(line)
+			line_counter++
+			continue
+		}
+
+		if line_counter >= cd.Data.StartsAtLine {
+			logentry := cd.ParseLogLine(line)
 			Arango.InsertLogItem(collection_name, logentry)
-			element_counter++
 		}
 
-		counter++
+		line_counter++
 	}
-
-	logFile.Close()
-	fmt.Println("\n\nElements inserted: ", element_counter)
 }
 
-func (cd *CsvDefinition) ParseHeaderColumns(line string) {
-	// Remove unwanted characters
-	line = strings.ReplaceAll(line, ".", "_")
+func (cd *CsvDefinition) ParseHeaderColumns(line []string) {
+	for index, value := range line {
+		column_name := strings.ReplaceAll(value, ".", "_")
 
-	// Removing unwanted columns
-	for index, name := range strings.Split(line, cd.Delimiter) {
 		illegal := false
+
 		for _, skip := range cd.ColumnsHeaders.SkipCols {
 			if (index + 1) == skip {
 				illegal = true
@@ -99,18 +106,22 @@ func (cd *CsvDefinition) ParseHeaderColumns(line string) {
 		}
 
 		if illegal == false {
-			cd.ColumnsHeaders.Names = append(cd.ColumnsHeaders.Names, name)
+			cd.ColumnsHeaders.Names = append(cd.ColumnsHeaders.Names, column_name)
 		}
 	}
 }
 
-func (cd *CsvDefinition) ParseLogLine(logline string) map[string]interface{} {
-	data := strings.Split(logline, cd.Delimiter)
+func (cd *CsvDefinition) ParseLogLine(logline []string) map[string]interface{} {
 	logentry := make(map[string]interface{})
 
-	for index, value := range data {
+	for index, value := range logline {
 		logentry[cd.ColumnsHeaders.Names[index]] = value
 	}
+
+	// Generate document id for log entry
+	sha256id := sha256.New()
+	sha256id.Write([]byte(fmt.Sprintf("%v", logentry)))
+	logentry["_key"] = fmt.Sprintf("%x", sha256id.Sum(nil))
 
 	return logentry
 }

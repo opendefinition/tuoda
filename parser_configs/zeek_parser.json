@@ -1,6 +1,6 @@
 {
 	"delimiter": "\t",
-    "parser_type": "csv",
+    	"parser_type": "csv",
 	"column_headers": {
 		"line_pos": 7,
 		"column_names": [],

@@ -26,7 +26,7 @@ func LoadConfiguration() (Configuration, error) {
 		return Configuration{}, errors.New("Unable to retrive user home directory")
 	}
 
-	tuoda_folder := path.Join(user_home, "tuodal")
+	tuoda_folder := path.Join(user_home, "tuoda")
 
 	_, folder_err := os.Stat(tuoda_folder)
 

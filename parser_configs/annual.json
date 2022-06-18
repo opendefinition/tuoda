@@ -1,0 +1,12 @@
+{
+	"delimiter": ",",
+    "parser_type": "csv",
+	"column_headers": {
+		"line_pos": 1,
+		"column_names": [],
+		"SkipCols": []
+	},
+	"data": {
+		"starts_at_line": 1
+	}
+}

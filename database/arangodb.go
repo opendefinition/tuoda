@@ -15,6 +15,10 @@ type ArangoDB struct {
 }
 
 func ArangoDBClient(address string, database string, username string, password string) *ArangoDB {
+	if len(address) == 0 || len(database) == 0 || len(username) == 0 || len(password) == 0 {
+		log.Fatalf("Empty ArangoDB settings observed")
+	}
+
 	Arango := new(ArangoDB)
 	var err error
 
@@ -70,7 +74,7 @@ func (ac *ArangoDB) InsertLogItem(collection string, item map[string]interface{}
 		if err != nil {
 			log.Fatalf("Unable to insert document: %v", err)
 		} else {
-			// fmt.Println("Document inserted!")
+			fmt.Println("Document inserted!")
 		}
 	}
 }
