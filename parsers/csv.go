@@ -23,16 +23,11 @@ type ColumnHeaders struct {
 	SkipCols []int    `json:"skip_cols`
 }
 
-type DataRow struct {
-	StartsAtLine int `json:"starts_at_line"`
-}
-
 type CsvDefinition struct {
 	ParserType     string        `json:"parser_type"`
 	CommentChar    string        `json:"comment_char"`
 	Delimiter      string        `json:"delimiter"`
 	ColumnsHeaders ColumnHeaders `json:"column_headers"`
-	Data           DataRow       `json:"data"`
 }
 
 func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
@@ -52,6 +47,9 @@ func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
 	if size > 0 {
 		csvreader.Comma = delimiter
 	}
+
+	// Enable lazy quotes
+	csvreader.LazyQuotes = true
 
 	// Handle commented lines
 	if len(cd.CommentChar) > 0 {
@@ -147,10 +145,15 @@ func (cd *CsvDefinition) PreParseHeaderColumns(filePath string) {
 
 	for scanner.Scan() {
 		linecounter++
-
 		if linecounter == cd.ColumnsHeaders.LinePos {
 			line := strings.Split(scanner.Text(), cd.Delimiter)
 			cd.ParseHeaderColumns(line)
+
+			/*
+				fmt.Println("Found these headers:")
+				fmt.Println(cd.ColumnsHeaders.Names)
+				fmt.Println(len(cd.ColumnsHeaders.Names))
+			*/
 		}
 	}
 
@@ -160,15 +163,18 @@ func (cd *CsvDefinition) PreParseHeaderColumns(filePath string) {
 func (cd *CsvDefinition) ParseLogLine(logline []string) (map[string]interface{}, error) {
 	logentry := make(map[string]interface{})
 
-	if len(cd.ColumnsHeaders.Names) == 0 {
+	length_headers := len(cd.ColumnsHeaders.Names)
+	length_columns := len(logline)
+
+	if length_headers == 0 {
 		return logentry, errors.New("No CSV headers defined")
 	}
 
-	if len(cd.ColumnsHeaders.Names) != len(logline) {
+	if length_headers != length_columns && length_headers < length_columns {
 		return logentry, errors.New("Column headers does not match logline")
 	}
 
-	if len(logline) == 0 {
+	if length_columns == 0 {
 		return logentry, errors.New("Encountered empty log line")
 	}
 
