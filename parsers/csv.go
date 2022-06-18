@@ -1,8 +1,10 @@
 package parsers
 
 import (
+	"bufio"
 	"crypto/sha256"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -15,6 +17,7 @@ import (
 )
 
 type ColumnHeaders struct {
+	Preparse bool     `json:"preparse"`
 	LinePos  int      `json:"line_pos"`
 	Names    []string `json:"column_names"`
 	SkipCols []int    `json:"skip_cols`
@@ -52,16 +55,15 @@ func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
 
 	// Handle commented lines
 	if len(cd.CommentChar) > 0 {
-		fmt.Println("Setting comment")
-		commentchar, size := utf8.DecodeRuneInString(cd.CommentChar)
+		commentchar, char_size := utf8.DecodeRuneInString(cd.CommentChar)
 
-		if size > 0 {
+		if char_size > 0 {
 			csvreader.Comment = commentchar
 		}
 	}
 
 	// Prepare Arango database
-	Arango := database.ArangoDBClient(
+	db := database.ArangoDBClient(
 		config.ArangoDB.Address,
 		config.ArangoDB.Database,
 		config.ArangoDB.Username,
@@ -76,21 +78,26 @@ func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
 
 	line_counter := 0
 
+	// Test if we need to preparse column headers
+	if cd.ColumnsHeaders.Preparse == true && len(cd.ColumnsHeaders.Names) == 0 && cd.ColumnsHeaders.LinePos >= 0 {
+		cd.PreParseHeaderColumns(logPath)
+	}
+
 	for {
 		line_counter++
 
-		line, err := csvreader.Read()
+		line, read_err := csvreader.Read()
 
-		if err == io.EOF {
+		if read_err == io.EOF {
 			break
 		}
 
-		if err != nil {
-			log.Fatal(err)
+		if read_err != nil {
+			log.Fatal(read_err)
 		}
 
-		if err != nil {
-			log.Fatal(err)
+		if read_err != nil {
+			log.Fatal(read_err)
 		}
 
 		// Parse headers
@@ -100,9 +107,13 @@ func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
 		}
 
 		// Parse log line
-		entry := cd.ParseLogLine(line)
-		Arango.InsertLogItem(collection_name, entry)
+		entry, parseerr := cd.ParseLogLine(line)
 
+		if parseerr != nil {
+			fmt.Printf("Error: %v\n", parseerr)
+		} else {
+			db.InsertLogItem(collection_name, entry)
+		}
 	}
 }
 
@@ -124,8 +135,42 @@ func (cd *CsvDefinition) ParseHeaderColumns(line []string) {
 	}
 }
 
-func (cd *CsvDefinition) ParseLogLine(logline []string) map[string]interface{} {
+func (cd *CsvDefinition) PreParseHeaderColumns(filePath string) {
+	logfile, err := os.Open(filePath)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	scanner := bufio.NewScanner(logfile)
+	linecounter := 0
+
+	for scanner.Scan() {
+		linecounter++
+
+		if linecounter == cd.ColumnsHeaders.LinePos {
+			line := strings.Split(scanner.Text(), cd.Delimiter)
+			cd.ParseHeaderColumns(line)
+		}
+	}
+
+	logfile.Close()
+}
+
+func (cd *CsvDefinition) ParseLogLine(logline []string) (map[string]interface{}, error) {
 	logentry := make(map[string]interface{})
+
+	if len(cd.ColumnsHeaders.Names) == 0 {
+		return logentry, errors.New("No CSV headers defined")
+	}
+
+	if len(cd.ColumnsHeaders.Names) != len(logline) {
+		return logentry, errors.New("Column headers does not match logline")
+	}
+
+	if len(logline) == 0 {
+		return logentry, errors.New("Encountered empty log line")
+	}
 
 	for index, value := range logline {
 		logentry[cd.ColumnsHeaders.Names[index]] = value
@@ -136,5 +181,5 @@ func (cd *CsvDefinition) ParseLogLine(logline []string) map[string]interface{} {
 	sha256id.Write([]byte(fmt.Sprintf("%v", logentry)))
 	logentry["_key"] = fmt.Sprintf("%x", sha256id.Sum(nil))
 
-	return logentry
+	return logentry, nil
 }
