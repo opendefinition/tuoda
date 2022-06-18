@@ -56,6 +56,7 @@ func LoadConfiguration() (Configuration, error) {
 	}
 
 	config := Configuration{}
+
 	json.Unmarshal(json_data, &config)
 
 	return config, nil

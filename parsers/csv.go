@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/opendefinition/tuoda/config"
 	"github.com/opendefinition/tuoda/database"
@@ -25,6 +26,7 @@ type DataRow struct {
 
 type CsvDefinition struct {
 	ParserType     string        `json:"parser_type"`
+	CommentChar    string        `json:"comment_char"`
 	Delimiter      string        `json:"delimiter"`
 	ColumnsHeaders ColumnHeaders `json:"column_headers"`
 	Data           DataRow       `json:"data"`
@@ -41,8 +43,21 @@ func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
 
 	csvreader := csv.NewReader(logfile)
 
-	if cd.Delimiter == "\t" {
-		csvreader.Comma = '\t'
+	// Check if delimiter char has been set by user
+	delimiter, size := utf8.DecodeRuneInString(cd.Delimiter)
+
+	if size > 0 {
+		csvreader.Comma = delimiter
+	}
+
+	// Handle commented lines
+	if len(cd.CommentChar) > 0 {
+		fmt.Println("Setting comment")
+		commentchar, size := utf8.DecodeRuneInString(cd.CommentChar)
+
+		if size > 0 {
+			csvreader.Comment = commentchar
+		}
 	}
 
 	// Prepare Arango database
@@ -59,13 +74,15 @@ func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
 	fmt.Scanln(&collection_name)
 	fmt.Println("")
 
-	line_counter := 1
+	line_counter := 0
 
 	for {
+		line_counter++
+
 		line, err := csvreader.Read()
 
 		if err == io.EOF {
-			continue
+			break
 		}
 
 		if err != nil {
@@ -76,20 +93,16 @@ func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
 			log.Fatal(err)
 		}
 
-		fmt.Println(line_counter)
-		// Obtain CSV headers from indicated line
-		if cd.ColumnsHeaders.LinePos >= 0 && line_counter == cd.ColumnsHeaders.LinePos {
+		// Parse headers
+		if line_counter == cd.ColumnsHeaders.LinePos {
 			cd.ParseHeaderColumns(line)
-			line_counter++
 			continue
 		}
 
-		if line_counter >= cd.Data.StartsAtLine {
-			logentry := cd.ParseLogLine(line)
-			Arango.InsertLogItem(collection_name, logentry)
-		}
+		// Parse log line
+		entry := cd.ParseLogLine(line)
+		Arango.InsertLogItem(collection_name, entry)
 
-		line_counter++
 	}
 }
 
