@@ -41,6 +41,13 @@ func (pc *ParseCmd) Run(ctx *Context) error {
 	if len(match) == 0 {
 		fmt.Println("No match for parser, sorry")
 	} else {
+		// Ask where to store the log content
+		// Ask where to store the log
+		var collection string
+		fmt.Print("Name of collection: ")
+		fmt.Scanln(&collection)
+		fmt.Println("")
+
 		// Set up database
 		database := database.ArangoDBClient(
 			config.ArangoDB.Address,
@@ -53,7 +60,7 @@ func (pc *ParseCmd) Run(ctx *Context) error {
 		case "csv":
 			obj := new(parsers.CsvDefinition)
 			json.Unmarshal([]byte(parserdefRaw), obj)
-			obj.Parse(*database, pc.LogFile)
+			obj.Parse(*database, collection, pc.LogFile)
 		default:
 			fmt.Println("No such parser exists. Check your settings.")
 		}

@@ -29,7 +29,7 @@ type CsvDefinition struct {
 	ColumnsHeaders ColumnHeaders `json:"column_headers"`
 }
 
-func (cd *CsvDefinition) Parse(database database.ArangoDB, logPath string) {
+func (cd *CsvDefinition) Parse(database database.ArangoDB, collection string, logPath string) {
 	logfile, err := os.Open(logPath)
 
 	if err != nil {
@@ -58,12 +58,6 @@ func (cd *CsvDefinition) Parse(database database.ArangoDB, logPath string) {
 			csvreader.Comment = commentchar
 		}
 	}
-
-	// Ask where to store the log
-	var collection_name string
-	fmt.Print("Name of collection: ")
-	fmt.Scanln(&collection_name)
-	fmt.Println("")
 
 	line_counter := 0
 
@@ -101,7 +95,7 @@ func (cd *CsvDefinition) Parse(database database.ArangoDB, logPath string) {
 		if parseerr != nil {
 			fmt.Printf("Error: %v\n", parseerr)
 		} else {
-			database.InsertLogItem(collection_name, entry)
+			database.InsertLogItem(collection, entry)
 		}
 	}
 }
