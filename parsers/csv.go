@@ -12,7 +12,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/opendefinition/tuoda/config"
 	"github.com/opendefinition/tuoda/database"
 )
 
@@ -30,7 +29,7 @@ type CsvDefinition struct {
 	ColumnsHeaders ColumnHeaders `json:"column_headers"`
 }
 
-func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
+func (cd *CsvDefinition) Parse(database database.ArangoDB, logPath string) {
 	logfile, err := os.Open(logPath)
 
 	if err != nil {
@@ -59,14 +58,6 @@ func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
 			csvreader.Comment = commentchar
 		}
 	}
-
-	// Prepare Arango database
-	db := database.ArangoDBClient(
-		config.ArangoDB.Address,
-		config.ArangoDB.Database,
-		config.ArangoDB.Username,
-		config.ArangoDB.Password,
-	)
 
 	// Ask where to store the log
 	var collection_name string
@@ -110,7 +101,7 @@ func (cd *CsvDefinition) Parse(config config.Configuration, logPath string) {
 		if parseerr != nil {
 			fmt.Printf("Error: %v\n", parseerr)
 		} else {
-			db.InsertLogItem(collection_name, entry)
+			database.InsertLogItem(collection_name, entry)
 		}
 	}
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/opendefinition/tuoda/config"
+	"github.com/opendefinition/tuoda/database"
 	"github.com/opendefinition/tuoda/parsers"
 )
 
@@ -40,11 +41,19 @@ func (pc *ParseCmd) Run(ctx *Context) error {
 	if len(match) == 0 {
 		fmt.Println("No match for parser, sorry")
 	} else {
+		// Set up database
+		database := database.ArangoDBClient(
+			config.ArangoDB.Address,
+			config.ArangoDB.Database,
+			config.ArangoDB.Username,
+			config.ArangoDB.Password,
+		)
+
 		switch match[1] {
 		case "csv":
 			obj := new(parsers.CsvDefinition)
 			json.Unmarshal([]byte(parserdefRaw), obj)
-			obj.Parse(config, pc.LogFile)
+			obj.Parse(*database, pc.LogFile)
 		default:
 			fmt.Println("No such parser exists. Check your settings.")
 		}
