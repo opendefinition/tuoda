@@ -74,7 +74,7 @@ func (ac *ArangoDB) InsertLogItem(collection string, item map[string]interface{}
 		if err != nil {
 			log.Fatalf("Unable to insert document: %v", err)
 		} else {
-			fmt.Println("Document inserted!")
+			fmt.Println("[ ", item["docsum"], " ] State: inserted")
 		}
 	}
 }

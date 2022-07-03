@@ -24,6 +24,12 @@ type ColumnHeaders struct {
 	SkipCols []int    `json:"skip_cols`
 }
 
+func (ch *ColumnHeaders) StandardizeColumns() {
+	for index, value := range ch.Names {
+		ch.Names[index] = strings.ToLower(strings.ReplaceAll(value, ".", "_"))
+	}
+}
+
 type CsvDefinition struct {
 	ParserType     string        `json:"parser_type"`
 	CommentChar    string        `json:"comment_char"`
@@ -68,6 +74,9 @@ func (cd *CsvDefinition) Parse(database database.ArangoDB, collection string, lo
 		cd.PreParseHeaderColumns(logPath)
 	}
 
+	// Make sure that column headers follows a certain naming convention
+	cd.ColumnsHeaders.StandardizeColumns()
+
 	for {
 		line_counter++
 
@@ -104,8 +113,6 @@ func (cd *CsvDefinition) Parse(database database.ArangoDB, collection string, lo
 
 func (cd *CsvDefinition) ParseHeaderColumns(line []string) {
 	for index, value := range line {
-		column_name := strings.ReplaceAll(value, ".", "_")
-
 		illegal := false
 
 		for _, skip := range cd.ColumnsHeaders.SkipCols {
@@ -115,7 +122,7 @@ func (cd *CsvDefinition) ParseHeaderColumns(line []string) {
 		}
 
 		if illegal == false {
-			cd.ColumnsHeaders.Names = append(cd.ColumnsHeaders.Names, column_name)
+			cd.ColumnsHeaders.Names = append(cd.ColumnsHeaders.Names, value)
 		}
 	}
 }
@@ -135,12 +142,6 @@ func (cd *CsvDefinition) PreParseHeaderColumns(filePath string) {
 		if linecounter == cd.ColumnsHeaders.LinePos {
 			line := strings.Split(scanner.Text(), cd.Delimiter)
 			cd.ParseHeaderColumns(line)
-
-			/*
-				fmt.Println("Found these headers:")
-				fmt.Println(cd.ColumnsHeaders.Names)
-				fmt.Println(len(cd.ColumnsHeaders.Names))
-			*/
 		}
 	}
 

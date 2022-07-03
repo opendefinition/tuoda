@@ -41,8 +41,7 @@ func (pc *ParseCmd) Run(ctx *Context) error {
 	if len(match) == 0 {
 		fmt.Println("No match for parser, sorry")
 	} else {
-		// Ask where to store the log content
-		// Ask where to store the log
+		// Ask where to store the log entries
 		var collection string
 		fmt.Print("Name of collection: ")
 		fmt.Scanln(&collection)
