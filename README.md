@@ -55,14 +55,14 @@ Here's an example of a CSV Zeek parser configuration you must refer to in CLI ar
 
 ```json
 {
-	"delimiter": "\t",          # CSV delimiter
-    "parser_type": "csv",       # Which parser to use
-	"column_headers": {         # Section for handling CSV column headers    
+	"delimiter": "\t",              # CSV delimiter
+	"parser_type": "csv",           # Which parser to use
+	"column_headers": {             # Section for handling CSV column headers    
 		"line_pos": 7,          # Line column headers is on - counting lines starting with 1. Set to value 0 if no headers present in CSV
 		"column_names": [],     # Provide your own headers here. "line_pos" setting above will be ignored
 		"SkipCols": [1]         # Skip header columns in position (list of indexes starting with 1)
 	},
-	"data": {                   # How data lines should be handled
+	"data": {                       # How data lines should be handled
 		"starts_at_line": 9     # On which line data starts. Note: 1 denotes the very first line
 	}
 }
