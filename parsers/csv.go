@@ -12,6 +12,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/google/uuid"
+
 	"github.com/opendefinition/tuoda/database"
 )
 
@@ -167,10 +169,14 @@ func (cd *CsvDefinition) ParseLogLine(logline []string) (map[string]interface{},
 		logentry[cd.ColumnsHeaders.Names[index]] = value
 	}
 
-	// Generate document id for log entry
+	// Document id for log entry
+	guid := uuid.New()
+	logentry["_key"] = guid
+
+	// Document hash
 	sha256id := sha256.New()
 	sha256id.Write([]byte(fmt.Sprintf("%v", logentry)))
-	logentry["_key"] = fmt.Sprintf("%x", sha256id.Sum(nil))
+	logentry["docsum"] = fmt.Sprintf("%x", sha256id.Sum(nil))
 
 	return logentry, nil
 }
