@@ -1,0 +1,7 @@
+parser_type: "csv"
+delimiter: ","
+column_headers:
+    preparse: true
+    line_pos: 1
+    column_names: []
+    SkipCols: []

@@ -1,11 +1,12 @@
 package config
 
 import (
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"os"
 	"path"
+
+	"gopkg.in/yaml.v3"
 )
 
 type ArangoDBConfig struct {
@@ -15,8 +16,21 @@ type ArangoDBConfig struct {
 	Database string
 }
 
-type Configuration struct {
+type Neo4jDBConfig struct {
+	Address  string
+	Username string
+	Password string
+	Database string
+}
+
+type Databases struct {
 	ArangoDB ArangoDBConfig
+	Neo4j    Neo4jDBConfig
+}
+
+type Configuration struct {
+	ActiveDatabase string
+	Databases      Databases
 }
 
 func LoadConfiguration() (Configuration, error) {
@@ -38,26 +52,26 @@ func LoadConfiguration() (Configuration, error) {
 		}
 	}
 
-	config_path := path.Join(tuoda_folder, "config.json")
+	config_path := path.Join(tuoda_folder, "config.yml")
 
 	_, config_err := os.Stat(config_path)
 
 	if config_err != nil {
-		empty_config, _ := json.MarshalIndent(Configuration{}, "", "\t")
+		empty_config, _ := yaml.Marshal(Configuration{})
 		os.WriteFile(config_path, empty_config, 0755)
 
 		return Configuration{}, errors.New("No application configuration file found. I have created a new empty one. Fill it out and play again!")
 	}
 
-	json_data, err := ioutil.ReadFile(config_path)
+	yaml_data, err := ioutil.ReadFile(config_path)
 
 	if err != nil {
-		return Configuration{}, errors.New("Unable to open configuration file. Please check if Tuoda folder and config.json exists!")
+		return Configuration{}, errors.New("Unable to open configuration file. Please check if Tuoda folder and config.yml exists!")
 	}
 
 	config := Configuration{}
 
-	json.Unmarshal(json_data, &config)
+	yaml.Unmarshal(yaml_data, &config)
 
 	return config, nil
 }

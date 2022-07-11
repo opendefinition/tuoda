@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -13,6 +12,7 @@ import (
 	"github.com/opendefinition/tuoda/config"
 	"github.com/opendefinition/tuoda/database"
 	"github.com/opendefinition/tuoda/parsers"
+	"gopkg.in/yaml.v3"
 )
 
 type Context struct {
@@ -28,7 +28,7 @@ func (pc *ParseCmd) Run(ctx *Context) error {
 	parserdefRaw := ReadParserDefinition(pc.Parser)
 
 	// Finding parser type
-	regx := regexp.MustCompile("\"parser_type\":\\s\"(\\w+)\"")
+	regx := regexp.MustCompile("parser_type:\\s\"(\\w+)\"")
 	match := regx.FindStringSubmatch(parserdefRaw)
 
 	// Load configuration
@@ -49,16 +49,16 @@ func (pc *ParseCmd) Run(ctx *Context) error {
 
 		// Set up database
 		database := database.ArangoDBClient(
-			config.ArangoDB.Address,
-			config.ArangoDB.Database,
-			config.ArangoDB.Username,
-			config.ArangoDB.Password,
+			config.Databases.ArangoDB.Address,
+			config.Databases.ArangoDB.Database,
+			config.Databases.ArangoDB.Username,
+			config.Databases.ArangoDB.Password,
 		)
 
 		switch match[1] {
 		case "csv":
 			obj := new(parsers.CsvDefinition)
-			json.Unmarshal([]byte(parserdefRaw), obj)
+			yaml.Unmarshal([]byte(parserdefRaw), obj)
 			obj.Parse(*database, collection, pc.LogFile)
 		default:
 			fmt.Println("No such parser exists. Check your settings.")

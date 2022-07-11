@@ -19,23 +19,25 @@ import (
 )
 
 type ColumnHeaders struct {
-	Preparse bool     `json:"preparse"`
-	LinePos  int      `json:"line_pos"`
-	Names    []string `json:"column_names"`
-	SkipCols []int    `json:"skip_cols`
+	Preparse bool     `yaml:"preparse"`
+	LinePos  int      `yaml:"line_pos"`
+	Names    []string `yaml:"column_names"`
+	SkipCols []int    `yaml:"skip_cols`
 }
 
 func (ch *ColumnHeaders) StandardizeColumns() {
 	for index, value := range ch.Names {
-		ch.Names[index] = strings.ToLower(strings.ReplaceAll(value, ".", "_"))
+		cleaned := strings.ToLower(strings.ReplaceAll(value, ".", "_"))
+		cleaned = strings.ReplaceAll(cleaned, " ", "")
+		ch.Names[index] = cleaned
 	}
 }
 
 type CsvDefinition struct {
-	ParserType     string        `json:"parser_type"`
-	CommentChar    string        `json:"comment_char"`
-	Delimiter      string        `json:"delimiter"`
-	ColumnsHeaders ColumnHeaders `json:"column_headers"`
+	ParserType     string        `yaml:"parser_type"`
+	CommentChar    string        `yaml:"comment_char"`
+	Delimiter      string        `yaml:"delimiter"`
+	ColumnsHeaders ColumnHeaders `yaml:"column_headers"`
 }
 
 func (cd *CsvDefinition) Parse(database database.ArangoDB, collection string, logPath string) {
