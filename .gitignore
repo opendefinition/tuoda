@@ -1,4 +1,6 @@
 *.code-workspace
 tuoda
 main
-./*.json
+*.json
+*.csv
+*.log
