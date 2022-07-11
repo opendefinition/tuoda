@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/opendefinition/tuoda/database"
+	"github.com/opendefinition/tuoda/helpers"
 )
 
 type ColumnHeaders struct {
@@ -168,6 +169,20 @@ func (cd *CsvDefinition) ParseLogLine(logline []string) (map[string]interface{},
 
 	for index, value := range logline {
 		logentry[cd.ColumnsHeaders.Names[index]] = value
+	}
+
+	// Type conversion
+	for key, value := range logentry {
+		datatype, stringvalue := helpers.DetermineType(value)
+
+		switch datatype {
+		case helpers.TYPE_FLOAT:
+			logentry[key] = helpers.StringToFLoat(stringvalue)
+		case helpers.TYPE_INTEGER:
+			logentry[key] = helpers.StringToInteger(stringvalue)
+		default:
+			logentry[key] = stringvalue
+		}
 	}
 
 	// Document id for log entry
