@@ -27,8 +27,10 @@ type ColumnHeaders struct {
 
 func (ch *ColumnHeaders) StandardizeColumns() {
 	for index, value := range ch.Names {
-		cleaned := strings.ToLower(strings.ReplaceAll(value, ".", "_"))
+		cleaned := strings.ToLower(strings.ReplaceAll(value, ".", ""))
 		cleaned = strings.ReplaceAll(cleaned, " ", "")
+		cleaned = strings.ReplaceAll(cleaned, "_", "")
+		cleaned = strings.ReplaceAll(cleaned, "-", "")
 		ch.Names[index] = cleaned
 	}
 }
@@ -40,7 +42,7 @@ type CsvDefinition struct {
 	ColumnsHeaders ColumnHeaders `yaml:"column_headers"`
 }
 
-func (cd *CsvDefinition) Parse(database database.ArangoDB, collection string, logPath string) {
+func (cd *CsvDefinition) Parse(database database.DatabaseConnector, collection string, logPath string) {
 	logfile, err := os.Open(logPath)
 
 	if err != nil {
@@ -183,7 +185,7 @@ func (cd *CsvDefinition) ParseLogLine(logline []string) (map[string]interface{},
 		case helpers.TYPE_INTEGER:
 			logentry[key] = helpers.StringToInteger(stringvalue)
 		default:
-			logentry[key] = stringvalue
+			logentry[key] = string(stringvalue)
 		}
 	}
 

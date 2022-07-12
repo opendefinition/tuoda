@@ -1,4 +1,4 @@
-package database
+package arangodb
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ type ArangoDB struct {
 	Database   driver.Database
 }
 
-func ArangoDBClient(address string, database string, username string, password string) *ArangoDB {
+func NewClient(address string, database string, username string, password string) *ArangoDB {
 	if len(address) == 0 || len(database) == 0 || len(username) == 0 || len(password) == 0 {
 		log.Fatalf("Empty ArangoDB settings observed")
 	}

@@ -20,12 +20,11 @@ type Neo4jDBConfig struct {
 	Address  string
 	Username string
 	Password string
-	Database string
 }
 
 type Databases struct {
 	ArangoDB ArangoDBConfig
-	Neo4j    Neo4jDBConfig
+	Neo4J    Neo4jDBConfig
 }
 
 type Configuration struct {
