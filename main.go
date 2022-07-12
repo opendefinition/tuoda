@@ -11,6 +11,8 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/opendefinition/tuoda/config"
 	"github.com/opendefinition/tuoda/database"
+	"github.com/opendefinition/tuoda/database/arangodb"
+	"github.com/opendefinition/tuoda/database/neo4jdb"
 	"github.com/opendefinition/tuoda/parsers"
 	"gopkg.in/yaml.v3"
 )
@@ -41,25 +43,40 @@ func (pc *ParseCmd) Run(ctx *Context) error {
 	if len(match) == 0 {
 		fmt.Println("No match for parser, sorry")
 	} else {
+		// Set up database
+		var database database.DatabaseConnector
+
 		// Ask where to store the log entries
 		var collection string
 		fmt.Print("Name of collection: ")
 		fmt.Scanln(&collection)
 		fmt.Println("")
 
-		// Set up database
-		database := database.ArangoDBClient(
-			config.Databases.ArangoDB.Address,
-			config.Databases.ArangoDB.Database,
-			config.Databases.ArangoDB.Username,
-			config.Databases.ArangoDB.Password,
-		)
+		switch strings.ToLower(config.ActiveDatabase) {
+		case "arangodb":
+			database = arangodb.NewClient(
+				config.Databases.ArangoDB.Address,
+				config.Databases.ArangoDB.Database,
+				config.Databases.ArangoDB.Username,
+				config.Databases.ArangoDB.Password,
+			)
+		case "neo4j":
+			database = neo4jdb.NewClient(
+				config.Databases.Neo4J.Address,
+				config.Databases.Neo4J.Username,
+				config.Databases.Neo4J.Password,
+			)
 
+		default:
+			log.Fatal("Unknown database connector")
+		}
+
+		// Set up parser
 		switch match[1] {
 		case "csv":
 			obj := new(parsers.CsvDefinition)
 			yaml.Unmarshal([]byte(parserdefRaw), obj)
-			obj.Parse(*database, collection, pc.LogFile)
+			obj.Parse(database, collection, pc.LogFile)
 		default:
 			fmt.Println("No such parser exists. Check your settings.")
 		}

@@ -22,13 +22,15 @@ type ColumnHeaders struct {
 	Preparse bool     `yaml:"preparse"`
 	LinePos  int      `yaml:"line_pos"`
 	Names    []string `yaml:"column_names"`
-	SkipCols []int    `yaml:"skip_cols`
+	SkipCols []int    `yaml:"skip_cols"`
 }
 
 func (ch *ColumnHeaders) StandardizeColumns() {
 	for index, value := range ch.Names {
-		cleaned := strings.ToLower(strings.ReplaceAll(value, ".", "_"))
+		cleaned := strings.ToLower(strings.ReplaceAll(value, ".", ""))
 		cleaned = strings.ReplaceAll(cleaned, " ", "")
+		cleaned = strings.ReplaceAll(cleaned, "_", "")
+		cleaned = strings.ReplaceAll(cleaned, "-", "")
 		ch.Names[index] = cleaned
 	}
 }
@@ -40,7 +42,7 @@ type CsvDefinition struct {
 	ColumnsHeaders ColumnHeaders `yaml:"column_headers"`
 }
 
-func (cd *CsvDefinition) Parse(database database.ArangoDB, collection string, logPath string) {
+func (cd *CsvDefinition) Parse(database database.DatabaseConnector, collection string, logPath string) {
 	logfile, err := os.Open(logPath)
 
 	if err != nil {
@@ -183,13 +185,13 @@ func (cd *CsvDefinition) ParseLogLine(logline []string) (map[string]interface{},
 		case helpers.TYPE_INTEGER:
 			logentry[key] = helpers.StringToInteger(stringvalue)
 		default:
-			logentry[key] = stringvalue
+			logentry[key] = string(stringvalue)
 		}
 	}
 
 	// Document id for log entry
 	guid := uuid.New()
-	logentry["_key"] = guid
+	logentry["_key"] = strings.Replace(guid.String(), "-", "", -1)
 
 	// Document hash
 	sha256id := sha256.New()

@@ -5,6 +5,6 @@ column_headers:
     preparse: true
     line_pos: 7
     column_names: []
-    SkipCols: [1]
+    skip_cols: [1]
 data:
     starts_at_line: 9
