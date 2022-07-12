@@ -47,17 +47,15 @@ func (n4j *Neo4JDB) InsertLogItem(collection string, item map[string]interface{}
 		itemmap = append(itemmap, fmt.Sprintf("%s: $%s", key, key))
 	}
 
-	fmt.Println(item)
-	fmt.Println()
-
-	createstatement := fmt.Sprintf("CREATE (a:%s) {%s}", collection, strings.Join(itemmap, ","))
+	createstatement := fmt.Sprintf("CREATE (a:%s { %s })", collection, strings.Join(itemmap, ", "))
 
 	_, err := session.WriteTransaction(func(tx neo4j.Transaction) (interface{}, error) {
 		result, err := tx.Run(createstatement, item)
 
 		if err != nil {
-			fmt.Println("Going bonkers")
-			panic(err)
+			log.Fatalf("Unable to insert document: %v", err)
+		} else {
+			fmt.Println("[ ", item["docsum"], " ] State: inserted")
 		}
 
 		return result.Consume()

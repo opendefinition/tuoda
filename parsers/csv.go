@@ -22,7 +22,7 @@ type ColumnHeaders struct {
 	Preparse bool     `yaml:"preparse"`
 	LinePos  int      `yaml:"line_pos"`
 	Names    []string `yaml:"column_names"`
-	SkipCols []int    `yaml:"skip_cols`
+	SkipCols []int    `yaml:"skip_cols"`
 }
 
 func (ch *ColumnHeaders) StandardizeColumns() {
@@ -191,7 +191,7 @@ func (cd *CsvDefinition) ParseLogLine(logline []string) (map[string]interface{},
 
 	// Document id for log entry
 	guid := uuid.New()
-	logentry["_key"] = guid
+	logentry["_key"] = strings.Replace(guid.String(), "-", "", -1)
 
 	// Document hash
 	sha256id := sha256.New()
